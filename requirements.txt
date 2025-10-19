@@ -1,0 +1,2 @@
+# Core dependencies for the chat application
+cryptography>=41.0.0  # For message encryption
