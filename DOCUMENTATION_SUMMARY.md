@@ -2,14 +2,14 @@
 
 ## Overview
 
-This repository now has comprehensive documentation for the GitHub Actions workflow system. The documentation suite includes over 2,400 lines of detailed guides, examples, and references covering all aspects of GitHub Actions and CI/CD workflows.
+This repository now has comprehensive documentation for the GitHub Actions workflow system. The documentation suite includes over 3,400 lines of detailed guides, examples, and references covering all aspects of GitHub Actions and CI/CD workflows.
 
 ## 📊 Documentation Statistics
 
 | Metric | Count |
 |--------|-------|
-| **Total Documentation Files** | 7 files |
-| **Total Lines** | 2,486 lines |
+| **Total Documentation Files** | 10 files |
+| **Total Lines** | ~3,400 lines |
 | **Total Words** | ~54,000 words |
 | **Topics Covered** | 100+ topics |
 | **Code Examples** | 50+ examples |
@@ -183,7 +183,7 @@ This repository now has comprehensive documentation for the GitHub Actions workf
 
 **Target Audience:** Users working with specific workflows
 
-#### 9. python-ci.yml (94 lines)
+#### 9. python-ci.yml (101 lines)
 **Purpose:** Example Python CI/CD workflow  
 **Features:**
 - Multi-version testing (Python 3.8-3.11)
@@ -197,7 +197,7 @@ This repository now has comprehensive documentation for the GitHub Actions workf
 
 **Status:** Example workflow (not active by default)
 
-#### 10. code-quality.yml (91 lines)
+#### 10. code-quality.yml (106 lines)
 **Purpose:** Example code quality and security workflow  
 **Features:**
 - Linting (flake8, pylint)
