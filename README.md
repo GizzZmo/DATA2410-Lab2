@@ -2,20 +2,39 @@
 
 ## 📚 Documentation
 
-- [GitHub Workflows Documentation](GITHUB_WORKFLOWS.md) - Comprehensive guide to GitHub Actions and CI/CD workflows
+### GitHub Workflows & CI/CD
+- **[GitHub Workflows Documentation](GITHUB_WORKFLOWS.md)** - Comprehensive guide to GitHub Actions and CI/CD workflows
+- **[Workflow Quick Reference](.github/WORKFLOW_QUICK_REFERENCE.md)** - Quick reference for common workflow commands
+- **[Workflow Architecture](.github/WORKFLOW_ARCHITECTURE.md)** - Visual guide to workflow structure and flow
+- **[Workflow FAQ](.github/WORKFLOW_FAQ.md)** - Frequently asked questions about workflows
+- **[Workflows Directory](.github/workflows/README.md)** - Example workflow files and explanations
+
+### Project Documentation
 - [Chat Application Guide](#chat-application) - How to use the chat application
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to this project
 
 ---
 
 ## GitHub Actions & Workflows
 
-This repository uses GitHub Actions for automation and continuous integration. For detailed information about:
-- Setting up and configuring workflows
-- Understanding the Copilot workflow system
-- Common workflow patterns and examples
-- Troubleshooting guide
+This repository uses GitHub Actions for automation and continuous integration. Our workflow system provides:
 
-**➡️ See the [GitHub Workflows Documentation](GITHUB_WORKFLOWS.md)**
+- ✅ **Automated testing** across multiple Python versions (3.8-3.11)
+- 🔍 **Code quality checks** with linting and formatting tools
+- 🔒 **Security scanning** for vulnerabilities
+- 🤖 **GitHub Copilot integration** for code assistance
+- 📊 **Code coverage reports** and metrics
+
+### Quick Links
+- 📖 [Complete Workflow Documentation](GITHUB_WORKFLOWS.md)
+- 🚀 [Quick Reference Guide](.github/WORKFLOW_QUICK_REFERENCE.md)
+- 🏗️ [Architecture Overview](.github/WORKFLOW_ARCHITECTURE.md)
+- ❓ [FAQ & Troubleshooting](.github/WORKFLOW_FAQ.md)
+
+### Available Workflows
+1. **Python CI** - Multi-version testing and code coverage
+2. **Code Quality** - Linting, formatting, and static analysis
+3. **Copilot Agent** - Automated code assistance (active)
 
 ---
 
