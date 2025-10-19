@@ -15,7 +15,6 @@ def receive_messages(text_area):
     Lytter etter og viser meldinger mottatt fra serveren i GUI.
     Kjører i en egen tråd.
     """
-    global client_socket
     if not client_socket:
         return
 
@@ -55,8 +54,6 @@ def send_message(event=None): # event=None for å tillate binding til Enter-tast
     """
     Sender meldingen fra input-feltet til serveren.
     """
-    global client_socket
-    global username
     if not client_socket:
         messagebox.showerror("Feil", "Ikke koblet til serveren.")
         return
@@ -87,7 +84,6 @@ def on_closing():
     """
     Håndterer hva som skjer når GUI-vinduet lukkes.
     """
-    global client_socket
     if client_socket:
         try:
             # Informer serveren om at klienten avslutter (valgfritt, men god praksis)
@@ -104,7 +100,6 @@ def start_client_gui():
     """
     global client_socket
     global receive_thread
-    global root, chat_area, message_entry # Gjør GUI-elementer globale for tilgang
     global username
 
     # Spør om server-IP og brukernavn ved oppstart
