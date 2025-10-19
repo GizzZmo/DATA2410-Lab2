@@ -1,7 +1,8 @@
 # client.py
+import json
 import socket
 import threading
-import json
+
 from cryptography.fernet import Fernet
 
 

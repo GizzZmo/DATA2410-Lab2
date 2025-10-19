@@ -1,11 +1,11 @@
 # server.py
+import json
 import socket
 import threading
-import json
 import time
-from cryptography.fernet import Fernet
 from typing import Dict, Set, Tuple
 
+from cryptography.fernet import Fernet
 
 # Global variables for managing clients and chatrooms
 clients: Dict[str, Tuple[socket.socket, str, str]] = {}  # {client_id: (socket, username, room)}

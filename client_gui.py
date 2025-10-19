@@ -1,11 +1,11 @@
 # client_gui.py
+import json
 import socket
 import threading
 import tkinter as tk
-from tkinter import scrolledtext, simpledialog, messagebox
-import json
-from cryptography.fernet import Fernet
+from tkinter import messagebox, scrolledtext, simpledialog
 
+from cryptography.fernet import Fernet
 
 # Global variables
 client_socket = None
