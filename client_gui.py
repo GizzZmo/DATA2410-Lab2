@@ -1,218 +1,411 @@
 # client_gui.py
+import json
 import socket
 import threading
 import tkinter as tk
-from tkinter import scrolledtext, simpledialog, messagebox
+from tkinter import messagebox, scrolledtext, simpledialog
 
-# Globale variabler for GUI-elementer og socket
+from cryptography.fernet import Fernet
+
+# Global variables
 client_socket = None
-receive_thread = None
-username = "Bruker" # Standard brukernavn
+cipher = None
+username = "User"
+current_room = "general"
 
-# Funksjon for å motta meldinger fra serveren og vise dem i GUI
-def receive_messages(text_area):
-    """
-    Lytter etter og viser meldinger mottatt fra serveren i GUI.
-    Kjører i en egen tråd.
-    """
-    if not client_socket:
-        return
+
+class CyberpunkChat:
+    """Cyberpunk-themed chat client with GUI."""
+
+    # Cyberpunk color scheme
+    COLORS = {
+        "bg_dark": "#0a0e27",
+        "bg_medium": "#1a1f3a",
+        "bg_light": "#2a2f4a",
+        "neon_cyan": "#00fff9",
+        "neon_pink": "#ff006e",
+        "neon_purple": "#8b00ff",
+        "neon_green": "#39ff14",
+        "text": "#e0e0e0",
+        "text_dim": "#808080",
+    }
+
+    def __init__(self, root):
+        self.root = root
+        self.root.title("CYBERPUNK CHAT")
+        self.root.geometry("900x700")
+        self.root.configure(bg=self.COLORS["bg_dark"])
+
+        # Configure custom fonts
+        try:
+            self.font_title = ("Courier New", 16, "bold")
+            self.font_normal = ("Consolas", 11)
+            self.font_button = ("Courier New", 10, "bold")
+        except Exception:
+            self.font_title = ("TkDefaultFont", 16, "bold")
+            self.font_normal = ("TkDefaultFont", 11)
+            self.font_button = ("TkDefaultFont", 10, "bold")
+
+        self.create_widgets()
+        self.root.protocol("WM_DELETE_WINDOW", self.on_closing)
+
+    def create_widgets(self):
+        """Create and layout all GUI widgets with cyberpunk styling."""
+
+        # Title frame
+        title_frame = tk.Frame(self.root, bg=self.COLORS["bg_dark"], height=60)
+        title_frame.pack(fill=tk.X, padx=5, pady=5)
+        title_frame.pack_propagate(False)
+
+        title_label = tk.Label(
+            title_frame,
+            text="╔══ CYBERPUNK CHAT ══╗",
+            font=self.font_title,
+            fg=self.COLORS["neon_cyan"],
+            bg=self.COLORS["bg_dark"],
+        )
+        title_label.pack(pady=10)
+
+        # Info frame (room and user info)
+        info_frame = tk.Frame(self.root, bg=self.COLORS["bg_medium"], height=40)
+        info_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
+        info_frame.pack_propagate(False)
+
+        self.room_label = tk.Label(
+            info_frame,
+            text="ROOM: general",
+            font=self.font_normal,
+            fg=self.COLORS["neon_green"],
+            bg=self.COLORS["bg_medium"],
+        )
+        self.room_label.pack(side=tk.LEFT, padx=10)
+
+        self.user_label = tk.Label(
+            info_frame,
+            text=f"USER: {username}",
+            font=self.font_normal,
+            fg=self.COLORS["neon_pink"],
+            bg=self.COLORS["bg_medium"],
+        )
+        self.user_label.pack(side=tk.RIGHT, padx=10)
+
+        # Chat area frame
+        chat_frame = tk.Frame(self.root, bg=self.COLORS["neon_cyan"], bd=2)
+        chat_frame.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+
+        self.chat_area = scrolledtext.ScrolledText(
+            chat_frame,
+            wrap=tk.WORD,
+            font=self.font_normal,
+            bg=self.COLORS["bg_light"],
+            fg=self.COLORS["text"],
+            insertbackground=self.COLORS["neon_cyan"],
+            selectbackground=self.COLORS["neon_purple"],
+            selectforeground=self.COLORS["text"],
+            relief=tk.FLAT,
+            padx=10,
+            pady=10,
+        )
+        self.chat_area.pack(fill=tk.BOTH, expand=True)
+        self.chat_area.configure(state="disabled")
+
+        # Input frame
+        input_frame = tk.Frame(self.root, bg=self.COLORS["bg_dark"])
+        input_frame.pack(fill=tk.X, padx=5, pady=5)
+
+        self.message_entry = tk.Entry(
+            input_frame,
+            font=self.font_normal,
+            bg=self.COLORS["bg_light"],
+            fg=self.COLORS["text"],
+            insertbackground=self.COLORS["neon_cyan"],
+            relief=tk.FLAT,
+            bd=0,
+        )
+        self.message_entry.pack(side=tk.LEFT, fill=tk.X, expand=True, padx=(0, 5), ipady=8)
+        self.message_entry.bind("<Return>", self.send_message)
+
+        self.send_button = tk.Button(
+            input_frame,
+            text=">> SEND",
+            command=self.send_message,
+            font=self.font_button,
+            bg=self.COLORS["neon_cyan"],
+            fg=self.COLORS["bg_dark"],
+            activebackground=self.COLORS["neon_green"],
+            activeforeground=self.COLORS["bg_dark"],
+            relief=tk.FLAT,
+            bd=0,
+            padx=20,
+            pady=8,
+            cursor="hand2",
+        )
+        self.send_button.pack(side=tk.RIGHT)
+
+        # Button frame
+        button_frame = tk.Frame(self.root, bg=self.COLORS["bg_dark"])
+        button_frame.pack(fill=tk.X, padx=5, pady=(0, 5))
+
+        self.rooms_button = tk.Button(
+            button_frame,
+            text="ROOMS",
+            command=self.list_rooms,
+            font=self.font_button,
+            bg=self.COLORS["neon_purple"],
+            fg=self.COLORS["text"],
+            activebackground=self.COLORS["neon_pink"],
+            activeforeground=self.COLORS["text"],
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=5,
+            cursor="hand2",
+        )
+        self.rooms_button.pack(side=tk.LEFT, padx=2)
+
+        self.join_button = tk.Button(
+            button_frame,
+            text="JOIN ROOM",
+            command=self.join_room,
+            font=self.font_button,
+            bg=self.COLORS["neon_purple"],
+            fg=self.COLORS["text"],
+            activebackground=self.COLORS["neon_pink"],
+            activeforeground=self.COLORS["text"],
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=5,
+            cursor="hand2",
+        )
+        self.join_button.pack(side=tk.LEFT, padx=2)
+
+        self.help_button = tk.Button(
+            button_frame,
+            text="HELP",
+            command=self.show_help,
+            font=self.font_button,
+            bg=self.COLORS["neon_purple"],
+            fg=self.COLORS["text"],
+            activebackground=self.COLORS["neon_pink"],
+            activeforeground=self.COLORS["text"],
+            relief=tk.FLAT,
+            bd=0,
+            padx=15,
+            pady=5,
+            cursor="hand2",
+        )
+        self.help_button.pack(side=tk.LEFT, padx=2)
+
+        # Initial message
+        self.append_to_chat("╔═══════════════════════════════════════╗", self.COLORS["neon_cyan"])
+        self.append_to_chat("║  WELCOME TO CYBERPUNK CHAT          ║", self.COLORS["neon_cyan"])
+        self.append_to_chat("║  Connect to server to begin...      ║", self.COLORS["neon_cyan"])
+        self.append_to_chat("╚═══════════════════════════════════════╝", self.COLORS["neon_cyan"])
+
+    def append_to_chat(self, message, color=None):
+        """Append a message to the chat area with optional color."""
+        self.chat_area.configure(state="normal")
+
+        if color:
+            tag_name = f"color_{color}"
+            self.chat_area.tag_config(tag_name, foreground=color)
+            self.chat_area.insert(tk.END, message + "\n", tag_name)
+        else:
+            self.chat_area.insert(tk.END, message + "\n")
+
+        self.chat_area.see(tk.END)
+        self.chat_area.configure(state="disabled")
+
+    def send_message(self, event=None):
+        """Send a message to the server."""
+        if not client_socket:
+            messagebox.showerror("Error", "Not connected to server!")
+            return
+
+        message = self.message_entry.get().strip()
+        if not message:
+            return
+
+        try:
+            # Encrypt and send
+            encrypted_msg = cipher.encrypt(message.encode("utf-8"))
+            msg_length = len(encrypted_msg)
+            client_socket.sendall(msg_length.to_bytes(4, "big") + encrypted_msg)
+
+            # Clear entry
+            self.message_entry.delete(0, tk.END)
+
+            # Display own message
+            if not message.startswith("/"):
+                self.append_to_chat(f"[{username}] {message}", self.COLORS["neon_green"])
+
+        except Exception as e:
+            self.append_to_chat(f"[ERROR] Failed to send: {e}", self.COLORS["neon_pink"])
+
+    def list_rooms(self):
+        """Request list of available rooms."""
+        if client_socket:
+            try:
+                msg = "/rooms"
+                encrypted_msg = cipher.encrypt(msg.encode("utf-8"))
+                client_socket.sendall(len(encrypted_msg).to_bytes(4, "big") + encrypted_msg)
+            except Exception as e:
+                self.append_to_chat(f"[ERROR] {e}", self.COLORS["neon_pink"])
+
+    def join_room(self):
+        """Join a different chat room."""
+        room_name = simpledialog.askstring("Join Room", "Enter room name:", parent=self.root)
+        if room_name and client_socket:
+            try:
+                msg = f"/join {room_name}"
+                encrypted_msg = cipher.encrypt(msg.encode("utf-8"))
+                client_socket.sendall(len(encrypted_msg).to_bytes(4, "big") + encrypted_msg)
+            except Exception as e:
+                self.append_to_chat(f"[ERROR] {e}", self.COLORS["neon_pink"])
+
+    def show_help(self):
+        """Display help information."""
+        if client_socket:
+            try:
+                msg = "/help"
+                encrypted_msg = cipher.encrypt(msg.encode("utf-8"))
+                client_socket.sendall(len(encrypted_msg).to_bytes(4, "big") + encrypted_msg)
+            except Exception as e:
+                self.append_to_chat(f"[ERROR] {e}", self.COLORS["neon_pink"])
+
+    def on_closing(self):
+        """Handle window closing."""
+        if client_socket:
+            try:
+                msg = "/quit"
+                encrypted_msg = cipher.encrypt(msg.encode("utf-8"))
+                client_socket.sendall(len(encrypted_msg).to_bytes(4, "big") + encrypted_msg)
+                client_socket.close()
+            except Exception:
+                pass
+        self.root.destroy()
+
+
+def receive_messages(gui):
+    """Receive messages from server and display in GUI."""
+    global current_room
 
     try:
         while True:
-            message = client_socket.recv(1024).decode('utf-8')
-            if not message:
-                text_area.insert(tk.END, "Serveren lukket tilkoblingen eller meldingen var tom.\n")
-                text_area.see(tk.END) # Rull til slutten
+            # Receive message length
+            length_bytes = client_socket.recv(4)
+            if not length_bytes:
+                gui.append_to_chat("[DISCONNECTED] Server closed connection", gui.COLORS["neon_pink"])
                 break
-            text_area.insert(tk.END, message + "\n")
-            text_area.see(tk.END) # Rull til slutten
-    except ConnectionResetError:
-        if text_area.winfo_exists(): # Sjekk om widgeten fortsatt eksisterer
-            text_area.insert(tk.END, "Tilkoblingen til serveren ble tilbakestilt.\n")
-            text_area.see(tk.END)
-    except ConnectionAbortedError:
-        if text_area.winfo_exists():
-            text_area.insert(tk.END, "Tilkoblingen til serveren ble avbrutt.\n")
-            text_area.see(tk.END)
-    except Exception as e:
-        if text_area.winfo_exists():
-            text_area.insert(tk.END, f"[FEIL I MOTTAK] En feil oppstod: {e}\n")
-            text_area.see(tk.END)
-    finally:
-        if text_area.winfo_exists():
-            text_area.insert(tk.END, "Avslutter mottakstråden.\n")
-            text_area.see(tk.END)
-        if client_socket:
+
+            msg_length = int.from_bytes(length_bytes, "big")
+
+            # Receive encrypted message
+            encrypted_data = b""
+            while len(encrypted_data) < msg_length:
+                chunk = client_socket.recv(min(msg_length - len(encrypted_data), 4096))
+                if not chunk:
+                    break
+                encrypted_data += chunk
+
+            if len(encrypted_data) != msg_length:
+                break
+
+            # Decrypt and parse
             try:
-                client_socket.close()
-            except:
-                pass # Ignorer feil hvis socket allerede er lukket
+                message = cipher.decrypt(encrypted_data).decode("utf-8")
+                data = json.loads(message)
 
-# Funksjon for å sende meldinger til serveren
-def send_message(event=None): # event=None for å tillate binding til Enter-tasten
-    """
-    Sender meldingen fra input-feltet til serveren.
-    """
-    if not client_socket:
-        messagebox.showerror("Feil", "Ikke koblet til serveren.")
-        return
+                msg_type = data.get("type", "message")
 
-    message_to_send = message_entry.get()
-    if message_to_send:
-        full_message = f"{username}: {message_to_send}"
-        try:
-            client_socket.send(full_message.encode('utf-8'))
-            # Viser egen melding i chat-vinduet også
-            # chat_area.insert(tk.END, f"Meg: {message_to_send}\n")
-            # chat_area.see(tk.END)
-            message_entry.delete(0, tk.END) # Tøm input-feltet
-            if message_to_send.lower() == 'avslutt':
-                chat_area.insert(tk.END, "Kobler fra serveren...\n")
-                chat_area.see(tk.END)
-                # Ingen break her, la receive_messages håndtere frakobling fra serverens side
-                # eller lukk vinduet for å avslutte
-        except socket.error as e:
-            chat_area.insert(tk.END, f"[SENDFEIL] {e}\n")
-            chat_area.see(tk.END)
-            if client_socket:
-                client_socket.close()
+                if msg_type == "welcome":
+                    gui.append_to_chat("═" * 60, gui.COLORS["neon_cyan"])
+                    gui.append_to_chat(data["message"], gui.COLORS["neon_cyan"])
+                    gui.append_to_chat(f"Room: {data['room']}", gui.COLORS["neon_green"])
+                    gui.append_to_chat(f"Available: {', '.join(data['rooms'])}", gui.COLORS["text_dim"])
+                    gui.append_to_chat("═" * 60, gui.COLORS["neon_cyan"])
+                    current_room = data["room"]
+                    gui.room_label.config(text=f"ROOM: {current_room}")
+
+                elif msg_type == "system":
+                    gui.append_to_chat(f"[SYSTEM] {data['message']}", gui.COLORS["neon_purple"])
+
+                elif msg_type == "message":
+                    user = data.get("username", "Unknown")
+                    msg = data.get("message", "")
+                    gui.append_to_chat(f"[{user}] {msg}", gui.COLORS["text"])
+
+                elif msg_type == "room_list":
+                    rooms = ", ".join(data["rooms"])
+                    gui.append_to_chat(f"[ROOMS] {rooms}", gui.COLORS["neon_purple"])
+
+                elif msg_type == "room_change":
+                    current_room = data["room"]
+                    gui.room_label.config(text=f"ROOM: {current_room}")
+                    gui.append_to_chat(f"[ROOM] {data['message']}", gui.COLORS["neon_green"])
+
+                elif msg_type == "help":
+                    gui.append_to_chat(f"[HELP] {data['message']}", gui.COLORS["neon_cyan"])
+
+            except json.JSONDecodeError:
+                gui.append_to_chat(message, gui.COLORS["text"])
+            except Exception as e:
+                gui.append_to_chat(f"[ERROR] {e}", gui.COLORS["neon_pink"])
+
+    except Exception as e:
+        if gui.root.winfo_exists():
+            gui.append_to_chat(f"[ERROR] Connection error: {e}", gui.COLORS["neon_pink"])
 
 
-# Funksjon for å håndtere lukking av vinduet
-def on_closing():
-    """
-    Håndterer hva som skjer når GUI-vinduet lukkes.
-    """
-    if client_socket:
-        try:
-            # Informer serveren om at klienten avslutter (valgfritt, men god praksis)
-            client_socket.send(f"{username}: avslutt".encode('utf-8'))
-            client_socket.close()
-        except socket.error:
-            pass # Ignorer feil hvis socket allerede er lukket eller utilgjengelig
-    root.destroy() # Lukk Tkinter-vinduet
+def start_client_gui(gui):
+    """Connect to the chat server."""
+    global client_socket, cipher, username
 
-# Hovedfunksjon for klienten
-def start_client_gui():
-    """
-    Starter chat-klienten med et grafisk brukergrensesnitt.
-    """
-    global client_socket
-    global receive_thread
-    global username
+    # Get server details
+    server_host = simpledialog.askstring("Server Connection", "Enter server IP (default: localhost):", parent=gui.root)
+    if not server_host:
+        server_host = "localhost"
 
-    # Spør om server-IP og brukernavn ved oppstart
-    # Dette er en enkel måte, kan gjøres mer elegant i et større GUI
-    server_host_input = simpledialog.askstring("Server Detaljer", "Skriv inn serverens IP-adresse (f.eks. localhost):", parent=root)
-    if not server_host_input:
-        root.destroy() # Lukk hvis brukeren avbryter
-        return
+    user_input = simpledialog.askstring("Username", "Enter your username:", parent=gui.root)
+    if user_input:
+        username = user_input
 
-    username_input = simpledialog.askstring("Brukernavn", "Skriv inn ditt brukernavn:", parent=root)
-    if username_input:
-        username = username_input
-    
-    SERVER_HOST = server_host_input
-    SERVER_PORT = 65432  # Samme port som serveren bruker
-
-    # Opprett en socket
-    client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    SERVER_PORT = 65432
 
     try:
-        # Koble til serveren
-        chat_area.insert(tk.END, f"Kobler til serveren på {SERVER_HOST}:{SERVER_PORT}...\n")
-        chat_area.see(tk.END)
-        client_socket.connect((SERVER_HOST, SERVER_PORT))
-        chat_area.insert(tk.END, "Koblet til serveren!\n")
-        chat_area.see(tk.END)
-        messagebox.showinfo("Tilkoblet", f"Koblet til serveren som {username}!")
+        gui.append_to_chat(f"[CONNECTING] Connecting to {server_host}:{SERVER_PORT}...", gui.COLORS["neon_cyan"])
 
+        client_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        client_socket.connect((server_host, SERVER_PORT))
 
-        # Start en tråd for å motta meldinger fra serveren
-        receive_thread = threading.Thread(target=receive_messages, args=(chat_area,), daemon=True)
+        # Receive encryption key
+        encryption_key = client_socket.recv(32)
+        cipher = Fernet(encryption_key)
+        gui.append_to_chat("[SECURITY] Encrypted connection established", gui.COLORS["neon_green"])
+
+        # Send username
+        encrypted_username = cipher.encrypt(username.encode("utf-8"))
+        client_socket.sendall(len(encrypted_username).to_bytes(4, "big") + encrypted_username)
+
+        # Update GUI
+        gui.user_label.config(text=f"USER: {username}")
+        gui.append_to_chat("[CONNECTED] Successfully connected!", gui.COLORS["neon_green"])
+
+        # Start receive thread
+        receive_thread = threading.Thread(target=receive_messages, args=(gui,), daemon=True)
         receive_thread.start()
 
-    except socket.error as e:
-        if chat_area: # Sjekk om chat_area er initialisert
-            chat_area.insert(tk.END, f"[SOCKET FEIL] Kunne ikke koble til serveren: {e}\n")
-            chat_area.see(tk.END)
-        else:
-            print(f"[SOCKET FEIL] Kunne ikke koble til serveren: {e}")
-        messagebox.showerror("Tilkoblingsfeil", f"Kunne ikke koble til serveren: {e}")
-        if client_socket:
-            client_socket.close()
-        root.destroy() # Lukk vinduet hvis tilkobling feiler
-        return
-    except Exception as e: # Generell feilhåndtering for uventede feil under oppsett
-        if chat_area:
-            chat_area.insert(tk.END, f"[OPPSTARTSFEIL] {e}\n")
-            chat_area.see(tk.END)
-        else:
-            print(f"[OPPSTARTSFEIL] {e}")
-        messagebox.showerror("Feil", f"En uventet feil oppstod: {e}")
-        if client_socket:
-            client_socket.close()
-        root.destroy()
-        return
-
-# Sett opp hovedvinduet for GUI
-root = tk.Tk()
-root.title(f"Python Chat Klient - {username}") # Tittelen kan oppdateres etter brukernavn er satt
-
-# Chat-område (tekstboks for å vise meldinger)
-chat_area = scrolledtext.ScrolledText(root, wrap=tk.WORD, state='normal', height=20, width=70)
-chat_area.pack(padx=10, pady=10)
-chat_area.configure(state='disabled') # Gjør den skrivebeskyttet først
-# Midlertidig enable for å sette inn startmeldinger, så disable igjen
-chat_area.configure(state='normal')
-chat_area.insert(tk.END, "Velkommen til chatten! Koble til en server for å starte.\n")
-chat_area.configure(state='disabled')
+    except Exception as e:
+        gui.append_to_chat(f"[ERROR] Connection failed: {e}", gui.COLORS["neon_pink"])
+        messagebox.showerror("Connection Error", f"Failed to connect: {e}")
 
 
-# Input-felt for å skrive meldinger
-message_entry = tk.Entry(root, width=60, font=("Helvetica", 12))
-message_entry.pack(side=tk.LEFT, padx=(10, 0), pady=(0, 10), fill=tk.X, expand=True)
-message_entry.bind("<Return>", send_message) # Send melding med Enter-tasten
-
-# Send-knapp
-send_button = tk.Button(root, text="Send", command=send_message, font=("Helvetica", 10), bg="#4CAF50", fg="white", relief=tk.RAISED, borderwidth=2)
-send_button.pack(side=tk.RIGHT, padx=(5, 10), pady=(0, 10))
-
-# Start tilkoblingsprosessen etter at GUI er satt opp
-# Vi kan kalle start_client_gui() fra en meny eller knapp senere for mer fleksibilitet
-# For nå, la oss starte den via en knapp eller automatisk etter at brukernavn er satt.
-
-# Meny (valgfritt, men god praksis for tilkobling etc.)
-menubar = tk.Menu(root)
-filemenu = tk.Menu(menubar, tearoff=0)
-filemenu.add_command(label="Koble til server...", command=lambda: threading.Thread(target=start_client_gui, daemon=True).start()) # Kjør i tråd for å ikke fryse GUI
-filemenu.add_separator()
-filemenu.add_command(label="Avslutt", command=on_closing)
-menubar.add_cascade(label="Fil", menu=filemenu)
-root.config(menu=menubar)
-
-
-# Håndter lukking av vinduet
-root.protocol("WM_DELETE_WINDOW", on_closing)
-
-# Start Tkinter hovedløkke
 if __name__ == "__main__":
-    # Initialiser GUI-elementer før start_client_gui kalles for å unngå referansefeil
-    # start_client_gui() vil nå bli kalt via menyen
-    # Hvis du vil koble til automatisk ved oppstart (etter å ha fått IP/brukernavn):
-    # root.after(100, start_client_gui) # Forsinket kall for å la GUI initialisere
-    
-    # For nå, la brukeren klikke "Koble til server..." fra menyen.
-    # Eller, for enklere testing, kall start_client_gui direkte etter at root er definert.
-    # Men det er bedre å la brukeren initiere tilkoblingen.
-    # For å teste umiddelbart, kan du fjerne menyen og kalle:
-    # threading.Thread(target=start_client_gui, daemon=True).start()
-    # Men da må input for server IP og brukernavn håndteres før GUI-løkken starter helt.
-    
-    # La oss starte med å be om detaljer og så starte GUI-loopen.
-    # For å unngå at simpledialog blokkerer for tidlig, kan vi starte tilkoblingen
-    # etter at hovedvinduet er synlig, f.eks. via en knapp eller meny.
-    # Den nåværende implementasjonen med menyen er en god start.
-    
+    root = tk.Tk()
+    gui = CyberpunkChat(root)
+
+    # Auto-connect on startup
+    root.after(500, lambda: start_client_gui(gui))
+
     root.mainloop()
