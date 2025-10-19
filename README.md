@@ -1,3 +1,26 @@
+# DATA2410 Lab 2 - Chat Application
+
+## 📚 Documentation
+
+- [GitHub Workflows Documentation](GITHUB_WORKFLOWS.md) - Comprehensive guide to GitHub Actions and CI/CD workflows
+- [Chat Application Guide](#chat-application) - How to use the chat application
+
+---
+
+## GitHub Actions & Workflows
+
+This repository uses GitHub Actions for automation and continuous integration. For detailed information about:
+- Setting up and configuring workflows
+- Understanding the Copilot workflow system
+- Common workflow patterns and examples
+- Troubleshooting guide
+
+**➡️ See the [GitHub Workflows Documentation](GITHUB_WORKFLOWS.md)**
+
+---
+
+## Chat Application
+
 Jeg kan lage et enkelt eksempel på en tekstbasert chat-applikasjon i Python som lar to personer kommunisere med hverandre over et nettverk. Dette vil bestå av to separate skript: ett for serveren og ett for klienten.
 
 Her er koden for server- og klientapplikasjonen:
