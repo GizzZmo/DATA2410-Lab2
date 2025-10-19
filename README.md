@@ -1,3 +1,45 @@
+# DATA2410 Lab 2 - Chat Application
+
+## 📚 Documentation
+
+### GitHub Workflows & CI/CD
+- **[GitHub Workflows Documentation](GITHUB_WORKFLOWS.md)** - Comprehensive guide to GitHub Actions and CI/CD workflows
+- **[Workflow Quick Reference](.github/WORKFLOW_QUICK_REFERENCE.md)** - Quick reference for common workflow commands
+- **[Workflow Architecture](.github/WORKFLOW_ARCHITECTURE.md)** - Visual guide to workflow structure and flow
+- **[Workflow FAQ](.github/WORKFLOW_FAQ.md)** - Frequently asked questions about workflows
+- **[Workflows Directory](.github/workflows/README.md)** - Example workflow files and explanations
+
+### Project Documentation
+- [Chat Application Guide](#chat-application) - How to use the chat application
+- [Contributing Guide](CONTRIBUTING.md) - How to contribute to this project
+
+---
+
+## GitHub Actions & Workflows
+
+This repository uses GitHub Actions for automation and continuous integration. Our workflow system provides:
+
+- ✅ **Automated testing** across multiple Python versions (3.8-3.11)
+- 🔍 **Code quality checks** with linting and formatting tools
+- 🔒 **Security scanning** for vulnerabilities
+- 🤖 **GitHub Copilot integration** for code assistance
+- 📊 **Code coverage reports** and metrics
+
+### Quick Links
+- 📖 [Complete Workflow Documentation](GITHUB_WORKFLOWS.md)
+- 🚀 [Quick Reference Guide](.github/WORKFLOW_QUICK_REFERENCE.md)
+- 🏗️ [Architecture Overview](.github/WORKFLOW_ARCHITECTURE.md)
+- ❓ [FAQ & Troubleshooting](.github/WORKFLOW_FAQ.md)
+
+### Available Workflows
+1. **Python CI** - Multi-version testing and code coverage
+2. **Code Quality** - Linting, formatting, and static analysis
+3. **Copilot Agent** - Automated code assistance (active)
+
+---
+
+## Chat Application
+
 Jeg kan lage et enkelt eksempel på en tekstbasert chat-applikasjon i Python som lar to personer kommunisere med hverandre over et nettverk. Dette vil bestå av to separate skript: ett for serveren og ett for klienten.
 
 Her er koden for server- og klientapplikasjonen:
